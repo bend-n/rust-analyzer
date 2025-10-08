@@ -16,6 +16,27 @@ pub enum Message {
     Notification(Notification),
 }
 
+impl Message {
+    pub fn request(self) -> Option<Request> {
+        match self {
+            Self::Request(x) => Some(x),
+            _ => None,
+        }
+    }
+    pub fn response(self) -> Option<Response> {
+        match self {
+            Self::Response(x) => Some(x),
+            _ => None,
+        }
+    }
+    pub fn notification(self) -> Option<Notification> {
+        match self {
+            Self::Notification(x) => Some(x),
+            _ => None,
+        }
+    }
+}
+
 impl From<Request> for Message {
     fn from(request: Request) -> Message {
         Message::Request(request)
@@ -36,11 +57,20 @@ impl From<Notification> for Message {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(transparent)]
-pub struct RequestId(IdRepr);
+pub struct RequestId(pub IdRepr);
+
+impl RequestId {
+    pub fn i32(&self) -> i32 {
+        match self.0 {
+            IdRepr::I32(x) => x,
+            _ => panic!(),
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(untagged)]
-enum IdRepr {
+pub enum IdRepr {
     I32(i32),
     String(String),
 }
@@ -247,10 +277,10 @@ impl Notification {
             Err(error) => Err(ExtractError::JsonError { method: self.method, error }),
         }
     }
-    pub(crate) fn is_exit(&self) -> bool {
+    pub fn is_exit(&self) -> bool {
         self.method == "exit"
     }
-    pub(crate) fn is_initialized(&self) -> bool {
+    pub fn is_initialized(&self) -> bool {
         self.method == "initialized"
     }
 }

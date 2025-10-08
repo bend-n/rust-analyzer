@@ -14,7 +14,7 @@ mod socket;
 mod stdio;
 
 use std::{
-    io,
+    io::{self, Stdin, Stdout},
     net::{TcpListener, TcpStream, ToSocketAddrs},
 };
 
@@ -37,8 +37,11 @@ impl Connection {
     /// Create connection over standard in/standard out.
     ///
     /// Use this to create a real language server.
-    pub fn stdio() -> (Connection, IoThreads) {
-        let (sender, receiver, io_threads) = stdio::stdio_transport();
+    pub fn stdio(
+        stdout: impl io::Read + io::BufRead + Sync + Send + 'static,
+        stdin: impl io::Write + Sync + Send + 'static,
+    ) -> (Connection, IoThreads) {
+        let (sender, receiver, io_threads) = stdio::stdio_transport(stdout, stdin);
         (Connection { sender, receiver }, io_threads)
     }
 

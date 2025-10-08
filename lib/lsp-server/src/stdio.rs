@@ -1,5 +1,5 @@
 use std::{
-    io::{self, stdin, stdout},
+    io::{self, Read, Stdin, Stdout, Write, stdin, stdout},
     thread,
 };
 
@@ -10,16 +10,17 @@ use crossbeam_channel::{Receiver, Sender, bounded};
 use crate::Message;
 
 /// Creates an LSP connection via stdio.
-pub(crate) fn stdio_transport() -> (Sender<Message>, Receiver<Message>, IoThreads) {
+pub(crate) fn stdio_transport(
+    mut read_from: impl Read + std::io::BufRead + Sync + Send + 'static,
+    mut write_to: impl Write + Sync + Send + 'static,
+) -> (Sender<Message>, Receiver<Message>, IoThreads) {
     let (drop_sender, drop_receiver) = bounded::<Message>(0);
     let (writer_sender, writer_receiver) = bounded::<Message>(0);
     let writer = thread::Builder::new()
         .name("LspServerWriter".to_owned())
         .spawn(move || {
-            let stdout = stdout();
-            let mut stdout = stdout.lock();
             writer_receiver.into_iter().try_for_each(|it| {
-                let result = it.write(&mut stdout);
+                let result = it.write(&mut write_to);
                 let _ = drop_sender.send(it);
                 result
             })
@@ -30,12 +31,10 @@ pub(crate) fn stdio_transport() -> (Sender<Message>, Receiver<Message>, IoThread
         .spawn(move || drop_receiver.into_iter().for_each(drop))
         .unwrap();
     let (reader_sender, reader_receiver) = bounded::<Message>(0);
-    let reader = thread::Builder::new()
+    let reader: thread::JoinHandle<Result<(), io::Error>> = thread::Builder::new()
         .name("LspServerReader".to_owned())
         .spawn(move || {
-            let stdin = stdin();
-            let mut stdin = stdin.lock();
-            while let Some(msg) = Message::read(&mut stdin)? {
+            while let Some(msg) = Message::read(&mut read_from)? {
                 let is_exit = matches!(&msg, Message::Notification(n) if n.is_exit());
 
                 debug!("sending message {msg:#?}");
