@@ -12,14 +12,14 @@ mod rustc_wrapper;
 
 use std::{env, fs, path::PathBuf, process::ExitCode, sync::Arc};
 
-use anyhow::Context;
-use lsp_server::Connection;
-use paths::Utf8PathBuf;
-use rust_analyzer::{
+use crate::{
     cli::flags,
     config::{Config, ConfigChange, ConfigErrors},
     from_json,
 };
+use anyhow::Context;
+use lsp_server::Connection;
+use paths::Utf8PathBuf;
 use tracing_subscriber::fmt::writer::BoxMakeWriter;
 use vfs::AbsPathBuf;
 
@@ -60,7 +60,7 @@ fn actual_main() -> anyhow::Result<ExitCode> {
                 break 'lsp_server;
             }
             if cmd.version {
-                println!("rust-analyzer {}", rust_analyzer::version());
+                println!("rust-analyzer {}", crate::version());
                 break 'lsp_server;
             }
 
@@ -68,11 +68,11 @@ fn actual_main() -> anyhow::Result<ExitCode> {
             // a secondary latency-sensitive thread with an increased stack size.
             // We use this thread intent because any delay in the main loop
             // will make actions like hitting enter in the editor slow.
-            with_extra_thread(
-                "LspServer",
-                stdx::thread::ThreadIntent::LatencySensitive,
-                run_server,
-            )?;
+            // with_extra_thread(
+            //     "LspServer",
+            //     stdx::thread::ThreadIntent::LatencySensitive,
+            //     run_server,
+            // )?;
         }
         flags::RustAnalyzerCmd::Parse(cmd) => cmd.run()?,
         flags::RustAnalyzerCmd::Symbols(cmd) => cmd.run()?,
@@ -158,7 +158,7 @@ fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
         None => BoxMakeWriter::new(std::io::stderr),
     };
 
-    rust_analyzer::tracing::Config {
+    crate::tracing::Config {
         writer,
         // Deliberately enable all `warn` logs if the user has not set RA_LOG, as there is usually
         // useful information in there for debugging.
@@ -190,17 +190,43 @@ fn with_extra_thread(
     Ok(())
 }
 
-fn run_server() -> anyhow::Result<()> {
-    tracing::info!("server version {} will start", rust_analyzer::version());
+pub fn run_server(connection: Connection) -> anyhow::Result<()> {
+    let log_file = env::var("RA_LOG_FILE").ok().map(PathBuf::from);
+    let log_file = match log_file {
+        Some(path) => {
+            if let Some(parent) = path.parent() {
+                let _ = fs::create_dir_all(parent);
+            }
+            Some(
+                fs::File::create(&path)
+                    .with_context(|| format!("can't create log file at {}", path.display()))?,
+            )
+        }
+        None => None,
+    };
 
-    let (connection, io_threads) = Connection::stdio();
+    let writer = match log_file {
+        Some(file) => BoxMakeWriter::new(Arc::new(file)),
+        None => BoxMakeWriter::new(std::io::stderr),
+    };
+
+    crate::tracing::Config {
+        writer,
+        // Deliberately enable all `warn` logs if the user has not set RA_LOG, as there is usually
+        // useful information in there for debugging.
+        filter: env::var("RA_LOG").ok().unwrap_or_else(|| "warn".to_owned()),
+        chalk_filter: env::var("CHALK_DEBUG").ok(),
+        profile_filter: env::var("RA_PROFILE").ok(),
+        json_profile_filter: std::env::var("RA_PROFILE_JSON").ok(),
+    }
+    .init()?;
+
+    tracing::info!("server version {} will start", crate::version());
 
     let (initialize_id, initialize_params) = match connection.initialize_start() {
         Ok(it) => it,
         Err(e) => {
-            if e.channel_is_disconnected() {
-                io_threads.join()?;
-            }
+            if e.channel_is_disconnected() {}
             return Err(e.into());
         }
     };
@@ -280,13 +306,13 @@ fn run_server() -> anyhow::Result<()> {
         }
     }
 
-    let server_capabilities = rust_analyzer::server_capabilities(&config);
+    let server_capabilities = crate::server_capabilities(&config);
 
     let initialize_result = lsp_types::InitializeResult {
         capabilities: server_capabilities,
         server_info: Some(lsp_types::ServerInfo {
             name: String::from("rust-analyzer"),
-            version: Some(rust_analyzer::version().to_string()),
+            version: Some(crate::version().to_string()),
         }),
         offset_encoding: None,
     };
@@ -294,9 +320,7 @@ fn run_server() -> anyhow::Result<()> {
     let initialize_result = serde_json::to_value(initialize_result).unwrap();
 
     if let Err(e) = connection.initialize_finish(initialize_id, initialize_result) {
-        if e.channel_is_disconnected() {
-            io_threads.join()?;
-        }
+        if e.channel_is_disconnected() {}
         return Err(e.into());
     }
 
@@ -308,18 +332,13 @@ fn run_server() -> anyhow::Result<()> {
     }
 
     rayon::ThreadPoolBuilder::new()
-        .thread_name(|ix| format!("RayonWorker{}", ix))
+        .thread_name(|ix| format!("RARayonWorker{}", ix))
         .build_global()
         .unwrap();
 
     // If the io_threads have an error, there's usually an error on the main
     // loop too because the channels are closed. Ensure we report both errors.
-    match (rust_analyzer::main_loop(config, connection), io_threads.join()) {
-        (Err(loop_e), Err(join_e)) => anyhow::bail!("{loop_e}\n{join_e}"),
-        (Ok(_), Err(join_e)) => anyhow::bail!("{join_e}"),
-        (Err(loop_e), Ok(_)) => anyhow::bail!("{loop_e}"),
-        (Ok(_), Ok(_)) => {}
-    }
+    crate::main_loop(config, connection)?;
 
     tracing::info!("server did shut down");
     Ok(())

@@ -64,13 +64,13 @@ pub(crate) fn symbol_kind(symbol_kind: SymbolKind) -> lsp_types::SymbolKind {
         SymbolKind::Enum => lsp_types::SymbolKind::ENUM,
         SymbolKind::Variant => lsp_types::SymbolKind::ENUM_MEMBER,
         SymbolKind::Trait => lsp_types::SymbolKind::INTERFACE,
-        SymbolKind::Macro
-        | SymbolKind::ProcMacro
-        | SymbolKind::BuiltinAttr
-        | SymbolKind::Attribute
-        | SymbolKind::Derive
-        | SymbolKind::DeriveHelper => lsp_types::SymbolKind::FUNCTION,
+        SymbolKind::Macro => lsp_types::SymbolKind::MACRO,
+        SymbolKind::ProcMacro => lsp_types::SymbolKind::PROC_MACRO,
+        SymbolKind::BuiltinAttr => lsp_types::SymbolKind::BUILTIN_ATTRIBUTE,
+        SymbolKind::Attribute => lsp_types::SymbolKind::ATTRIBUTE,
+        SymbolKind::Derive => lsp_types::SymbolKind::DERIVE,
         SymbolKind::CrateRoot => lsp_types::SymbolKind::PACKAGE,
+        SymbolKind::DeriveHelper => lsp_types::SymbolKind::DERIVE_HELPER,
         SymbolKind::Module | SymbolKind::ToolModule => lsp_types::SymbolKind::MODULE,
         SymbolKind::TypeAlias | SymbolKind::TypeParam | SymbolKind::SelfType => {
             lsp_types::SymbolKind::TYPE_PARAMETER
@@ -1469,22 +1469,6 @@ impl From<lsp_ext::SnippetWorkspaceEdit> for lsp_types::WorkspaceEdit {
                 )
             }),
             change_annotations: snippet_workspace_edit.change_annotations,
-        }
-    }
-}
-
-impl From<lsp_ext::SnippetTextEdit>
-    for lsp_types::OneOf<lsp_types::TextEdit, lsp_types::AnnotatedTextEdit>
-{
-    fn from(
-        lsp_ext::SnippetTextEdit { annotation_id, insert_text_format:_, new_text, range }: lsp_ext::SnippetTextEdit,
-    ) -> Self {
-        match annotation_id {
-            Some(annotation_id) => lsp_types::OneOf::Right(lsp_types::AnnotatedTextEdit {
-                text_edit: lsp_types::TextEdit { range, new_text },
-                annotation_id,
-            }),
-            None => lsp_types::OneOf::Left(lsp_types::TextEdit { range, new_text }),
         }
     }
 }

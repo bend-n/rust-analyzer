@@ -382,7 +382,6 @@ impl Analysis {
             matching_brace::matching_brace(&file, position.offset)
         })
     }
-
     pub fn view_syntax_tree(&self, file_id: FileId) -> Cancellable<String> {
         self.with_db(|db| view_syntax_tree::view_syntax_tree(db, file_id))
     }

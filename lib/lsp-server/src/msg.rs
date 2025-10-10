@@ -234,11 +234,28 @@ impl Response {
         let error = ResponseError { code, message, data: None };
         Response { id, result: None, error: Some(error) }
     }
+    pub fn load<P: DeserializeOwned>(self) -> Result<P, ExtractError<Request>> {
+        self.result.ok_or(ExtractError::NoResult).and_then(|x| {
+            serde_json::from_value(x)
+                .map_err(|error| ExtractError::JsonError { method: "".into(), error })
+        })
+    }
 }
 
 impl Request {
     pub fn new<P: serde::Serialize>(id: RequestId, method: String, params: P) -> Request {
         Request { id, method, params: serde_json::to_value(params).unwrap() }
+    }
+    pub fn load<P: lsp_types::request::Request>(
+        self,
+    ) -> Result<(RequestId, P::Params), ExtractError<Request>> {
+        if self.method != P::METHOD {
+            return Err(ExtractError::MethodMismatch(self));
+        }
+        match serde_json::from_value(self.params) {
+            Ok(params) => Ok((self.id, params)),
+            Err(error) => Err(ExtractError::JsonError { method: self.method, error }),
+        }
     }
     pub fn extract<P: DeserializeOwned>(
         self,
@@ -264,6 +281,14 @@ impl Request {
 impl Notification {
     pub fn new(method: String, params: impl serde::Serialize) -> Notification {
         Notification { method, params: serde_json::to_value(params).unwrap() }
+    }
+    pub fn load<T: lsp_types::notification::Notification>(
+        self,
+    ) -> Result<T::Params, ExtractError<Notification>> {
+        (self.method == T::METHOD).ok_or(ExtractError::NoResult).and_then(|()| {
+            serde_json::from_value(self.params)
+                .map_err(|e| ExtractError::JsonError { method: self.method, error: e })
+        })
     }
     pub fn extract<P: DeserializeOwned>(
         self,
