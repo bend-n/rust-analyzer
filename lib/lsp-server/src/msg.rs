@@ -246,6 +246,17 @@ impl Request {
     pub fn new<P: serde::Serialize>(id: RequestId, method: String, params: P) -> Request {
         Request { id, method, params: serde_json::to_value(params).unwrap() }
     }
+    pub fn load<P: lsp_types::request::Request>(
+        self,
+    ) -> Result<(RequestId, P::Params), ExtractError<Request>> {
+        if self.method != P::METHOD {
+            return Err(ExtractError::MethodMismatch(self));
+        }
+        match serde_json::from_value(self.params) {
+            Ok(params) => Ok((self.id, params)),
+            Err(error) => Err(ExtractError::JsonError { method: self.method, error }),
+        }
+    }
     pub fn extract<P: DeserializeOwned>(
         self,
         method: &str,
