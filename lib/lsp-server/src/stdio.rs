@@ -8,27 +8,21 @@ use log::debug;
 use crossbeam_channel::{Receiver, Sender, bounded};
 
 use crate::Message;
-
 /// Creates an LSP connection via stdio.
-pub(crate) fn stdio_transport(
+pub fn stdio_transport(
     mut read_from: impl Read + std::io::BufRead + Sync + Send + 'static,
     mut write_to: impl Write + Sync + Send + 'static,
 ) -> (Sender<Message>, Receiver<Message>, IoThreads) {
-    let (drop_sender, drop_receiver) = bounded::<Message>(0);
     let (writer_sender, writer_receiver) = bounded::<Message>(0);
     let writer = thread::Builder::new()
         .name("LspServerWriter".to_owned())
         .spawn(move || {
             writer_receiver.into_iter().try_for_each(|it| {
+                debug!("sent message {it:#?}");
                 let result = it.write(&mut write_to);
-                let _ = drop_sender.send(it);
                 result
             })
         })
-        .unwrap();
-    let dropper = thread::Builder::new()
-        .name("LspMessageDropper".to_owned())
-        .spawn(move || drop_receiver.into_iter().for_each(drop))
         .unwrap();
     let (reader_sender, reader_receiver) = bounded::<Message>(0);
     let reader: thread::JoinHandle<Result<(), io::Error>> = thread::Builder::new()
@@ -36,8 +30,7 @@ pub(crate) fn stdio_transport(
         .spawn(move || {
             while let Some(msg) = Message::read(&mut read_from)? {
                 let is_exit = matches!(&msg, Message::Notification(n) if n.is_exit());
-
-                debug!("sending message {msg:#?}");
+                debug!("received message {msg:#?}");
                 if let Err(e) = reader_sender.send(msg) {
                     return Err(io::Error::other(e));
                 }
@@ -49,7 +42,7 @@ pub(crate) fn stdio_transport(
             Ok(())
         })
         .unwrap();
-    let threads = IoThreads { reader, writer, dropper };
+    let threads = IoThreads { reader, writer };
     (writer_sender, reader_receiver, threads)
 }
 
@@ -57,15 +50,13 @@ pub(crate) fn stdio_transport(
 pub(crate) fn make_io_threads(
     reader: thread::JoinHandle<io::Result<()>>,
     writer: thread::JoinHandle<io::Result<()>>,
-    dropper: thread::JoinHandle<()>,
 ) -> IoThreads {
-    IoThreads { reader, writer, dropper }
+    IoThreads { reader, writer }
 }
 
 pub struct IoThreads {
     reader: thread::JoinHandle<io::Result<()>>,
     writer: thread::JoinHandle<io::Result<()>>,
-    dropper: thread::JoinHandle<()>,
 }
 
 impl IoThreads {
@@ -73,12 +64,6 @@ impl IoThreads {
         match self.reader.join() {
             Ok(r) => r?,
             Err(err) => std::panic::panic_any(err),
-        }
-        match self.dropper.join() {
-            Ok(_) => (),
-            Err(err) => {
-                std::panic::panic_any(err);
-            }
         }
         match self.writer.join() {
             Ok(r) => r,
