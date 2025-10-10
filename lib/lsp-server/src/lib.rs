@@ -6,12 +6,12 @@
 
 #![warn(rust_2018_idioms, unused_lifetimes)]
 #![allow(clippy::print_stdout, clippy::disallowed_types)]
-
-mod error;
-mod msg;
-mod req_queue;
-mod socket;
-mod stdio;
+#![feature(bool_to_result)]
+pub mod error;
+pub mod msg;
+pub mod req_queue;
+pub mod socket;
+pub mod stdio;
 
 use std::{
     io::{self, Stdin, Stdout},

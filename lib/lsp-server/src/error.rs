@@ -30,6 +30,8 @@ impl fmt::Display for ProtocolError {
 
 #[derive(Debug)]
 pub enum ExtractError<T> {
+    /// Not found
+    NoResult,
     /// The extracted message was of a different method than expected.
     MethodMismatch(T),
     /// Failed to deserialize the message.
@@ -40,6 +42,9 @@ impl std::error::Error for ExtractError<Request> {}
 impl fmt::Display for ExtractError<Request> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            ExtractError::NoResult => {
+                write!(f, "unfound")
+            }
             ExtractError::MethodMismatch(req) => {
                 write!(f, "Method mismatch for request '{}'", req.method)
             }
@@ -54,6 +59,9 @@ impl std::error::Error for ExtractError<Notification> {}
 impl fmt::Display for ExtractError<Notification> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            ExtractError::NoResult => {
+                write!(f, "unfound")
+            }
             ExtractError::MethodMismatch(req) => {
                 write!(f, "Method mismatch for notification '{}'", req.method)
             }
