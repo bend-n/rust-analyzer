@@ -5,7 +5,7 @@ use std::{
 
 use log::debug;
 
-use crossbeam_channel::{Receiver, Sender, bounded};
+use crossbeam_channel::{Receiver, Sender, bounded, unbounded};
 
 use crate::Message;
 /// Creates an LSP connection via stdio.
@@ -13,15 +13,16 @@ pub fn stdio_transport(
     mut read_from: impl Read + std::io::BufRead + Sync + Send + 'static,
     mut write_to: impl Write + Sync + Send + 'static,
 ) -> (Sender<Message>, Receiver<Message>, IoThreads) {
-    let (writer_sender, writer_receiver) = bounded::<Message>(0);
+    let (writer_sender, writer_receiver) = unbounded::<Message>();
     let writer = thread::Builder::new()
         .name("LspServerWriter".to_owned())
         .spawn(move || {
-            writer_receiver.into_iter().try_for_each(|it| {
+            loop {
+                let it = writer_receiver.recv().unwrap();
                 debug!("sent message {it:#?}");
-                let result = it.write(&mut write_to);
+                let result = it.write(&mut write_to).unwrap();
                 result
-            })
+            }
         })
         .unwrap();
     let (reader_sender, reader_receiver) = bounded::<Message>(0);
@@ -55,8 +56,8 @@ pub(crate) fn make_io_threads(
 }
 
 pub struct IoThreads {
-    reader: thread::JoinHandle<io::Result<()>>,
-    writer: thread::JoinHandle<io::Result<()>>,
+    pub reader: thread::JoinHandle<io::Result<()>>,
+    pub writer: thread::JoinHandle<io::Result<()>>,
 }
 
 impl IoThreads {

@@ -41,8 +41,8 @@ serde_derive.workspace = true
 tenthash = "1.1.0"
 num_cpus = "1.17.0"
 mimalloc = { version = "0.1.46", default-features = false, optional = true }
-lsp-server.workspace = true
 smallvec.workspace = true
+lsp-server = { version = "0.7.9", path = "../../lib/lsp-server" }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-tree.workspace = true
