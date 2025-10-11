@@ -421,6 +421,9 @@ impl NotificationDispatcher<'_> {
                 self.not = Some(not);
                 return self;
             }
+            Err(ExtractError::NoResult) => {
+                panic!()
+            }
         };
 
         tracing::debug!(?params);

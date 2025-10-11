@@ -272,8 +272,10 @@ impl GlobalState {
         }
 
         select! {
-            recv(inbox) -> msg =>
-                return Ok(msg.ok().map(Event::Lsp)),
+            recv(inbox) -> msg => {
+                tracing::debug!("{msg:?}");
+                return Ok(msg.ok().map(Event::Lsp))
+            },
 
             recv(self.task_pool.receiver) -> task =>
                 task.map(Event::Task),
