@@ -3,7 +3,7 @@ use std::{
     thread,
 };
 
-use log::debug;
+use log::{debug, trace};
 
 use crossbeam_channel::{Receiver, Sender, bounded, unbounded};
 
@@ -15,11 +15,11 @@ pub fn stdio_transport(
 ) -> (Sender<Message>, Receiver<Message>, IoThreads) {
     let (writer_sender, writer_receiver) = unbounded::<Message>();
     let writer = thread::Builder::new()
-        .name("LspServerWriter".to_owned())
+        .name("send to lsp".to_owned())
         .spawn(move || {
             loop {
                 let it = writer_receiver.recv().unwrap();
-                debug!("sent message {it:#?}");
+                trace!("sent message {it:#?}");
                 let result = it.write(&mut write_to).unwrap();
                 result
             }
@@ -27,11 +27,11 @@ pub fn stdio_transport(
         .unwrap();
     let (reader_sender, reader_receiver) = bounded::<Message>(0);
     let reader: thread::JoinHandle<Result<(), io::Error>> = thread::Builder::new()
-        .name("LspServerReader".to_owned())
+        .name("read from lsp".to_owned())
         .spawn(move || {
             while let Some(msg) = Message::read(&mut read_from)? {
                 let is_exit = matches!(&msg, Message::Notification(n) if n.is_exit());
-                debug!("received message {msg:#?}");
+                trace!("received message {msg:#?}");
                 if let Err(e) = reader_sender.send(msg) {
                     return Err(io::Error::other(e));
                 }
