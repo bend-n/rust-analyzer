@@ -458,31 +458,6 @@ pub(crate) fn map_rust_diagnostic_to_lsp(
             fix: None,
         });
 
-        // Emit hint-level diagnostics for all `related_information` entries such as "help"s.
-        // This is useful because they will show up in the user's editor, unlike
-        // `related_information`, which just produces hard-to-read links, at least in VS Code.
-        let back_ref = lsp_types::DiagnosticRelatedInformation {
-            location: primary_location,
-            message: "original diagnostic".to_owned(),
-        };
-        for sub in &subdiagnostics {
-            diagnostics.push(MappedRustDiagnostic {
-                url: sub.related.location.uri.clone(),
-                fix: sub.suggested_fix.clone(),
-                diagnostic: lsp_types::Diagnostic {
-                    range: sub.related.location.range,
-                    severity: Some(lsp_types::DiagnosticSeverity::HINT),
-                    code: code.map(ToOwned::to_owned).map(lsp_types::NumberOrString::String),
-                    code_description: code_description.clone(),
-                    source: Some(source.to_owned()),
-                    message: sub.related.message.clone(),
-                    related_information: Some(vec![back_ref.clone()]),
-                    tags: None, // don't apply modifiers again
-                    data: None,
-                },
-            });
-        }
-    }
     diagnostics
 }
 
