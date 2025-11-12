@@ -457,7 +457,7 @@ pub(crate) fn map_rust_diagnostic_to_lsp(
             },
             fix: None,
         });
-
+    }
     diagnostics
 }
 

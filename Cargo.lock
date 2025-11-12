@@ -769,6 +769,7 @@ dependencies = [
 [[package]]
 name = "helix-lsp-types"
 version = "0.95.1"
+source = "git+https://github.com/bend-n/helix#9e8efb0a840f362070bd972fd0b75f5c70982202"
 dependencies = [
  "bitflags 2.10.0",
  "serde",
