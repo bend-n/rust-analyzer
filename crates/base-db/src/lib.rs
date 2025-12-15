@@ -412,17 +412,19 @@ impl DbPanicContext {
             let default_hook = panic::take_hook();
             panic::set_hook(Box::new(move |panic_info| {
                 default_hook(panic_info);
-                if let Some(backtrace) = salsa::Backtrace::capture() {
-                    eprintln!("{backtrace:#}");
-                }
-                DbPanicContext::with_ctx(|ctx| {
-                    if !ctx.is_empty() {
-                        eprintln!("additional context:");
-                        for (idx, frame) in ctx.iter().enumerate() {
-                            eprintln!("{idx:>4}: {frame}\n");
-                        }
+                if std::env::var("RA_BT").is_ok() {
+                    if let Some(backtrace) = salsa::Backtrace::capture() {
+                        eprintln!("{backtrace:#}");
                     }
-                });
+                    DbPanicContext::with_ctx(|ctx| {
+                        if !ctx.is_empty() {
+                            eprintln!("additional context:");
+                            for (idx, frame) in ctx.iter().enumerate() {
+                                eprintln!("{idx:>4}: {frame}\n");
+                            }
+                        }
+                    });
+                }
             }));
         }
 
