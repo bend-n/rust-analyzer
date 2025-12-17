@@ -302,7 +302,7 @@ pub fn run_server(connection: Connection) -> anyhow::Result<()> {
     }
 
     rayon::ThreadPoolBuilder::new()
-        .thread_name(|ix| format!("RayonWorker{}", ix))
+        .thread_name(|ix| format!("RARayonWorker{}", ix))
         .build_global()
         .unwrap();
 
