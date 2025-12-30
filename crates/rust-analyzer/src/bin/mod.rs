@@ -191,6 +191,36 @@ fn with_extra_thread(
 }
 
 pub fn run_server(connection: Connection) -> anyhow::Result<()> {
+    let log_file = env::var("RA_LOG_FILE").ok().map(PathBuf::from);
+    let log_file = match log_file {
+        Some(path) => {
+            if let Some(parent) = path.parent() {
+                let _ = fs::create_dir_all(parent);
+            }
+            Some(
+                fs::File::create(&path)
+                    .with_context(|| format!("can't create log file at {}", path.display()))?,
+            )
+        }
+        None => None,
+    };
+
+    let writer = match log_file {
+        Some(file) => BoxMakeWriter::new(Arc::new(file)),
+        None => BoxMakeWriter::new(std::io::stderr),
+    };
+
+    crate::tracing::Config {
+        writer,
+        // Deliberately enable all `warn` logs if the user has not set RA_LOG, as there is usually
+        // useful information in there for debugging.
+        filter: env::var("RA_LOG").ok().unwrap_or_else(|| "warn".to_owned()),
+        chalk_filter: env::var("CHALK_DEBUG").ok(),
+        profile_filter: env::var("RA_PROFILE").ok(),
+        json_profile_filter: std::env::var("RA_PROFILE_JSON").ok(),
+    }
+    .init()?;
+
     tracing::info!("server version {} will start", crate::version());
 
     let (initialize_id, initialize_params) = match connection.initialize_start() {
