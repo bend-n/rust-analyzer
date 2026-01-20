@@ -29,7 +29,7 @@ ide-completion.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
 scip = "0.5.2"
-lsp-types = { git = "https://github.com/bend-n/helix", package = "helix-lsp-types", features = [
+lsp-types = { git = "https://git.bendn.org/helix", package = "helix-lsp-types", features = [
   "proposed",
 ] }
 parking_lot = "0.12.4"

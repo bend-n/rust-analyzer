@@ -234,6 +234,8 @@ fn coalesce_indels(indels: Vec<Indel>) -> Vec<Indel> {
 
 #[cfg(test)]
 mod tests {
+    use span::TextSize;
+
     use super::{TextEdit, TextEditBuilder, TextRange};
 
     fn range(start: u32, end: u32) -> TextRange {
