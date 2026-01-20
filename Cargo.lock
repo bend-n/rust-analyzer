@@ -795,17 +795,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "helix-lsp-types"
-version = "0.95.1"
-source = "git+https://github.com/bend-n/helix#bcfbb875c88765c3c3af3d46f230d9efa37db353"
-dependencies = [
- "bitflags 2.10.0",
- "serde",
- "serde_json",
- "url",
-]
-
-[[package]]
 name = "hermit-abi"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1457,7 +1446,7 @@ dependencies = [
  "anyhow",
  "crossbeam-channel",
  "ctrlc",
- "helix-lsp-types 0.95.1 (git+https://github.com/bend-n/helix)",
+ "helix-lsp-types",
  "log",
  "rustc-hash 2.1.1",
  "serde",
@@ -2338,7 +2327,7 @@ dependencies = [
  "dirs",
  "dissimilar",
  "expect-test",
- "helix-lsp-types 0.95.1 (git+https://git.bendn.org/helix)",
+ "helix-lsp-types",
  "hir",
  "hir-def",
  "hir-ty",
