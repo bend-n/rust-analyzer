@@ -613,6 +613,7 @@ pub(crate) fn handle_document_symbol(
             range: to_proto::range(&line_index, node.node_range),
             selection_range: to_proto::range(&line_index, node.navigation_range),
             children: None,
+            sticky_range: node.sticky_range.map(|x| to_proto::range(&line_index, x)),
         };
         symbols.push((symbol, node.parent));
     }

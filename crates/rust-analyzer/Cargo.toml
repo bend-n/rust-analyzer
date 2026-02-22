@@ -15,9 +15,9 @@ rust-version.workspace = true
 [lib]
 doctest = false
 
-[[bin]]
-name = "rust-analyzer"
-path = "src/bin/main.rs"
+# [[bin]]
+# name = "rust-analyzer"
+# path = "src/bin/main.rs"
 
 [dependencies]
 anyhow.workspace = true

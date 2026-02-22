@@ -1,7 +1,7 @@
 use ide_db::SymbolKind;
 use syntax::{
     AstNode, AstToken, NodeOrToken, SourceFile, SyntaxNode, SyntaxToken, TextRange, WalkEvent,
-    ast::{self, HasAttrs, HasGenericParams, HasName},
+    ast::{self, HasAttrs, HasGenericParams, HasName, HasVisibility},
     match_ast,
 };
 
@@ -11,6 +11,7 @@ pub struct StructureNode {
     pub label: String,
     pub navigation_range: TextRange,
     pub node_range: TextRange,
+    pub sticky_range: Option<TextRange>,
     pub kind: StructureNodeKind,
     pub detail: Option<String>,
     pub deprecated: bool,
@@ -112,6 +113,7 @@ fn structure_node(node: &SyntaxNode, config: &FileStructureConfig) -> Option<Str
             kind,
             detail,
             deprecated: node.attrs().filter_map(|x| x.simple_name()).any(|x| x == "deprecated"),
+            sticky_range: None,
         })
     }
 
@@ -155,7 +157,15 @@ fn structure_node(node: &SyntaxNode, config: &FileStructureConfig) -> Option<Str
                     SymbolKind::Method
                 } else {
                     SymbolKind::Function
-                }))
+                })).map(|x| {
+                    let sticky_range = it.name().zip(it.visibility()).map(|(name, vis)|  {
+                    let end =  it.ret_type().map(|x| x.syntax().text_range().end()).or_else(|| {
+                        it.param_list().map(|x| x.syntax().text_range().end())
+                    }).unwrap_or(name.syntax().text_range().end());
+                        TextRange::new(vis.syntax().text_range().start(), end)
+                    });
+                    StructureNode { sticky_range, ..x }
+                })
             },
             ast::Struct(it) => decl(it, StructureNodeKind::SymbolKind(SymbolKind::Struct)),
             ast::Union(it) => decl(it, StructureNodeKind::SymbolKind(SymbolKind::Union)),
@@ -190,6 +200,7 @@ fn structure_node(node: &SyntaxNode, config: &FileStructureConfig) -> Option<Str
                     kind: StructureNodeKind::SymbolKind(SymbolKind::Impl),
                     detail: None,
                     deprecated: false,
+                    sticky_range: None,
                 };
                 Some(node)
             },
@@ -211,6 +222,7 @@ fn structure_node(node: &SyntaxNode, config: &FileStructureConfig) -> Option<Str
                     kind: StructureNodeKind::SymbolKind(SymbolKind::Local),
                     detail: it.ty().map(|ty| ty.to_string()),
                     deprecated: false,
+                    sticky_range: None,
                 };
                 Some(node)
             },
@@ -229,6 +241,7 @@ fn structure_node(node: &SyntaxNode, config: &FileStructureConfig) -> Option<Str
                     kind: StructureNodeKind::ExternBlock,
                     detail: None,
                     deprecated: false,
+                    sticky_range: None,
                 })
             },
             _ => None,
@@ -251,6 +264,7 @@ fn structure_token(token: SyntaxToken) -> Option<StructureNode> {
                 kind: StructureNodeKind::Region,
                 detail: None,
                 deprecated: false,
+                sticky_range: None,
             });
         }
     }
