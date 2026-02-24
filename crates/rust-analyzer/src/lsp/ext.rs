@@ -11,8 +11,8 @@ use std::ops;
 use lsp_types::Url;
 use lsp_types::request::Request;
 pub use lsp_types::{
-    SnippetTextEdit, CodeActionKind, DocumentOnTypeFormattingParams, PartialResultParams, Position, Range,
-    TextDocumentIdentifier, WorkDoneProgressParams, notification::Notification,
+    CodeActionKind, DocumentOnTypeFormattingParams, PartialResultParams, Position, Range,
+    SnippetTextEdit, TextDocumentIdentifier, WorkDoneProgressParams, notification::Notification,
 };
 use paths::Utf8PathBuf;
 use rustc_hash::FxHashMap;
@@ -45,6 +45,7 @@ pub struct InternalTestingFetchConfigParams {
     pub text_document: Option<TextDocumentIdentifier>,
     pub config: InternalTestingFetchConfigOption,
 }
+#[derive(Debug)]
 pub enum AnalyzerStatus {}
 
 impl Request for AnalyzerStatus {
@@ -83,7 +84,7 @@ pub struct FetchDependencyListParams {}
 pub struct FetchDependencyListResult {
     pub crates: Vec<CrateInfoResult>,
 }
-
+#[derive(Debug)]
 pub enum MemoryUsage {}
 
 impl Request for MemoryUsage {
@@ -91,7 +92,7 @@ impl Request for MemoryUsage {
     type Result = String;
     const METHOD: &'static str = "rust-analyzer/memoryUsage";
 }
-
+#[derive(Debug)]
 pub enum ReloadWorkspace {}
 
 impl Request for ReloadWorkspace {
@@ -99,7 +100,7 @@ impl Request for ReloadWorkspace {
     type Result = ();
     const METHOD: &'static str = "rust-analyzer/reloadWorkspace";
 }
-
+#[derive(Debug)]
 pub enum RebuildProcMacros {}
 
 impl Request for RebuildProcMacros {
@@ -130,6 +131,7 @@ impl Request for ViewHir {
     const METHOD: &'static str = "rust-analyzer/viewHir";
 }
 
+#[derive(Debug)]
 pub enum ViewMir {}
 
 impl Request for ViewMir {
@@ -137,7 +139,7 @@ impl Request for ViewMir {
     type Result = String;
     const METHOD: &'static str = "rust-analyzer/viewMir";
 }
-
+#[derive(Debug)]
 pub enum InterpretFunction {}
 
 impl Request for InterpretFunction {
@@ -160,7 +162,7 @@ pub struct ViewCrateGraphParams {
     /// Include *all* crates, not just crates in the workspace.
     pub full: bool,
 }
-
+#[derive(Debug)]
 pub enum ViewCrateGraph {}
 
 impl Request for ViewCrateGraph {
@@ -174,7 +176,7 @@ impl Request for ViewCrateGraph {
 pub struct ViewItemTreeParams {
     pub text_document: TextDocumentIdentifier,
 }
-
+#[derive(Debug)]
 pub enum ViewItemTree {}
 
 impl Request for ViewItemTree {
@@ -217,7 +219,7 @@ pub struct DiscoverTestResults {
     pub scope: Option<Vec<String>>,
     pub scope_file: Option<Vec<TextDocumentIdentifier>>,
 }
-
+#[derive(Debug)]
 pub enum DiscoverTest {}
 
 impl Request for DiscoverTest {
@@ -225,7 +227,7 @@ impl Request for DiscoverTest {
     type Result = DiscoverTestResults;
     const METHOD: &'static str = "experimental/discoverTest";
 }
-
+#[derive(Debug)]
 pub enum DiscoveredTests {}
 
 impl Notification for DiscoveredTests {
@@ -239,7 +241,7 @@ pub struct RunTestParams {
     pub include: Option<Vec<String>>,
     pub exclude: Option<Vec<String>>,
 }
-
+#[derive(Debug)]
 pub enum RunTest {}
 
 impl Request for RunTest {
@@ -247,6 +249,7 @@ impl Request for RunTest {
     type Result = ();
     const METHOD: &'static str = "experimental/runTest";
 }
+#[derive(Debug)]
 
 pub enum EndRunTest {}
 
@@ -254,14 +257,14 @@ impl Notification for EndRunTest {
     type Params = ();
     const METHOD: &'static str = "experimental/endRunTest";
 }
-
+#[derive(Debug)]
 pub enum AppendOutputToRunTest {}
 
 impl Notification for AppendOutputToRunTest {
     type Params = String;
     const METHOD: &'static str = "experimental/appendOutputToRunTest";
 }
-
+#[derive(Debug)]
 pub enum AbortRunTest {}
 
 impl Notification for AbortRunTest {
@@ -285,7 +288,7 @@ pub struct ChangeTestStateParams {
     pub test_id: String,
     pub state: TestState,
 }
-
+#[derive(Debug)]
 pub enum ChangeTestState {}
 
 impl Notification for ChangeTestState {
@@ -314,7 +317,7 @@ pub struct ExpandedMacro {
     pub name: String,
     pub expansion: String,
 }
-
+#[derive(Debug)]
 pub enum ViewRecursiveMemoryLayout {}
 
 impl Request for ViewRecursiveMemoryLayout {
@@ -348,21 +351,21 @@ impl Notification for CancelFlycheck {
     type Params = ();
     const METHOD: &'static str = "rust-analyzer/cancelFlycheck";
 }
-
+#[derive(Debug)]
 pub enum RunFlycheck {}
 
 impl Notification for RunFlycheck {
     type Params = RunFlycheckParams;
     const METHOD: &'static str = "rust-analyzer/runFlycheck";
 }
-
+#[derive(Debug)]
 pub enum ClearFlycheck {}
 
 impl Notification for ClearFlycheck {
     type Params = ();
     const METHOD: &'static str = "rust-analyzer/clearFlycheck";
 }
-
+#[derive(Debug)]
 pub enum OpenServerLogs {}
 
 impl Notification for OpenServerLogs {
@@ -390,7 +393,7 @@ pub struct MatchingBraceParams {
     pub text_document: TextDocumentIdentifier,
     pub positions: Vec<Position>,
 }
-
+#[derive(Debug)]
 pub enum ParentModule {}
 
 impl Request for ParentModule {
@@ -398,7 +401,7 @@ impl Request for ParentModule {
     type Result = Option<lsp_types::GotoDefinitionResponse>;
     const METHOD: &'static str = "experimental/parentModule";
 }
-
+#[derive(Debug)]
 pub enum ChildModules {}
 
 impl Request for ChildModules {
@@ -406,7 +409,7 @@ impl Request for ChildModules {
     type Result = Option<lsp_types::GotoDefinitionResponse>;
     const METHOD: &'static str = "experimental/childModules";
 }
-
+#[derive(Debug)]
 pub enum JoinLines {}
 
 impl Request for JoinLines {
@@ -495,7 +498,7 @@ pub struct ShellRunnableArgs {
     pub program: String,
     pub args: Vec<String>,
 }
-
+#[derive(Debug)]
 pub enum RelatedTests {}
 
 impl Request for RelatedTests {
@@ -508,7 +511,7 @@ impl Request for RelatedTests {
 pub struct TestInfo {
     pub runnable: Runnable,
 }
-
+#[derive(Debug)]
 pub enum Ssr {}
 
 impl Request for Ssr {
@@ -637,7 +640,7 @@ pub struct SnippetTextDocumentEdit {
     pub text_document: lsp_types::OptionalVersionedTextDocumentIdentifier,
     pub edits: Vec<SnippetTextEdit>,
 }
-
+#[derive(Debug)]
 pub enum HoverRequest {}
 
 impl Request for HoverRequest {
@@ -686,7 +689,7 @@ pub struct CommandLink {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tooltip: Option<String>,
 }
-
+#[derive(Debug)]
 pub enum ExternalDocs {}
 
 impl Request for ExternalDocs {
@@ -714,7 +717,7 @@ pub struct ExternalDocsPair {
     pub web: Option<lsp_types::Url>,
     pub local: Option<lsp_types::Url>,
 }
-
+#[derive(Debug)]
 pub enum OpenCargoToml {}
 
 impl Request for OpenCargoToml {
@@ -743,7 +746,7 @@ pub enum CodeLensResolveDataKind {
     Impls(lsp_types::request::GotoImplementationParams),
     References(lsp_types::TextDocumentPositionParams),
 }
-
+#[derive(Debug)]
 pub enum MoveItem {}
 
 impl Request for MoveItem {
@@ -852,7 +855,7 @@ pub struct CompletionImport {
 pub struct ClientCommandOptions {
     pub commands: Vec<String>,
 }
-
+#[derive(Debug)]
 pub enum GetFailedObligations {}
 
 #[derive(Deserialize, Serialize, Debug)]
