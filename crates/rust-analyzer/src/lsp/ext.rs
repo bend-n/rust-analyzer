@@ -10,8 +10,8 @@ use std::ops;
 
 use lsp_types::Url;
 use lsp_types::request::Request;
-use lsp_types::{
-    CodeActionKind, DocumentOnTypeFormattingParams, PartialResultParams, Position, Range,
+pub use lsp_types::{
+    SnippetTextEdit, CodeActionKind, DocumentOnTypeFormattingParams, PartialResultParams, Position, Range,
     TextDocumentIdentifier, WorkDoneProgressParams, notification::Notification,
 };
 use paths::Utf8PathBuf;
@@ -636,18 +636,6 @@ pub enum SnippetDocumentChangeOperation {
 pub struct SnippetTextDocumentEdit {
     pub text_document: lsp_types::OptionalVersionedTextDocumentIdentifier,
     pub edits: Vec<SnippetTextEdit>,
-}
-
-#[derive(Debug, Eq, PartialEq, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SnippetTextEdit {
-    pub range: Range,
-    pub new_text: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub insert_text_format: Option<lsp_types::InsertTextFormat>,
-    /// The annotation id if this is an annotated
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub annotation_id: Option<lsp_types::ChangeAnnotationIdentifier>,
 }
 
 pub enum HoverRequest {}

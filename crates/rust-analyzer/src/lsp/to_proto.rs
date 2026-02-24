@@ -1460,32 +1460,6 @@ impl From<lsp_ext::SnippetWorkspaceEdit> for lsp_types::WorkspaceEdit {
         }
     }
 }
-impl From<crate::lsp::ext::SnippetTextEdit> for lsp_types::SnippetTextEdit {
-    fn from(
-        lsp_ext::SnippetTextEdit { annotation_id, insert_text_format, new_text, range }: lsp_ext::SnippetTextEdit,
-    ) -> lsp_types::SnippetTextEdit {
-        lsp_types::SnippetTextEdit {
-            text_edit: lsp_types::TextEdit { new_text, range },
-            insert_text_format,
-            annotation_id,
-        }
-    }
-}
-impl From<lsp_ext::SnippetTextEdit>
-    for lsp_types::OneOf<lsp_types::TextEdit, lsp_types::AnnotatedTextEdit>
-{
-    fn from(
-        lsp_ext::SnippetTextEdit { annotation_id, insert_text_format:_, new_text, range }: lsp_ext::SnippetTextEdit,
-    ) -> Self {
-        match annotation_id {
-            Some(annotation_id) => lsp_types::OneOf::Right(lsp_types::AnnotatedTextEdit {
-                text_edit: lsp_types::TextEdit { range, new_text },
-                annotation_id,
-            }),
-            None => lsp_types::OneOf::Left(lsp_types::TextEdit { range, new_text }),
-        }
-    }
-}
 
 pub(crate) fn call_hierarchy_item(
     snap: &GlobalStateSnapshot,
