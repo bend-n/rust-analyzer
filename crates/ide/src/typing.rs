@@ -100,8 +100,8 @@ fn on_char_typed_(
         '.' => on_dot_typed(&file.tree(), offset),
         '=' => on_eq_typed(&file.tree(), offset),
         '>' => on_right_angle_typed(&file.tree(), offset),
-        '{' | '(' | '<' => on_opening_delimiter_typed(file, offset, char_typed, edition),
-        '|' => on_pipe_typed(&file.tree(), offset),
+        '{' | '(' | '<' => return on_opening_delimiter_typed(file, offset, char_typed, edition),
+        '|' => return on_pipe_typed(&file.tree(), offset),
         '+' => on_plus_typed(&file.tree(), offset),
         _ => None,
     }
@@ -119,7 +119,7 @@ fn on_opening_delimiter_typed(
     offset: TextSize,
     opening_bracket: char,
     edition: Edition,
-) -> Option<TextEdit> {
+) -> Option<ExtendedTextEdit> {
     type FilterFn = fn(SyntaxKind) -> bool;
     let (closing_bracket, expected_ast_bracket, allowed_kinds) = match opening_bracket {
         '{' => ('}', SyntaxKind::L_CURLY, &[ast::Expr::can_cast as FilterFn] as &[FilterFn]),
@@ -148,11 +148,11 @@ fn on_opening_delimiter_typed(
     if let Some(edit) =
         on_delimited_node_typed(&reparsed, offset, opening_bracket, closing_bracket, allowed_kinds)
     {
-        return Some(edit);
+        return Some(conv(edit));
     }
 
     match opening_bracket {
-        '{' => on_left_brace_typed(&reparsed, offset),
+        '{' => on_left_brace_typed(&reparsed, offset).map(conv),
         '<' => on_left_angle_typed(&file.tree(), &reparsed, offset),
         _ => None,
     }
@@ -365,7 +365,7 @@ fn on_left_angle_typed(
     file: &SourceFile,
     reparsed: &SourceFile,
     offset: TextSize,
-) -> Option<TextEdit> {
+) -> Option<ExtendedTextEdit> {
     let file_text = reparsed.syntax().text();
 
     // Find the next non-whitespace char in the line, check if its a `>`
@@ -386,13 +386,16 @@ fn on_left_angle_typed(
         })
     {
         // Insert the closing bracket right after
-        Some(TextEdit::insert(offset + TextSize::of('<'), '>'.to_string()))
+        Some(ExtendedTextEdit {
+            edit: TextEdit::insert(offset + TextSize::of('<'), "$0>".to_string()),
+            is_snippet: true,
+        })
     } else {
         None
     }
 }
 
-fn on_pipe_typed(file: &SourceFile, offset: TextSize) -> Option<TextEdit> {
+fn on_pipe_typed(file: &SourceFile, offset: TextSize) -> Option<ExtendedTextEdit> {
     let pipe_token = file.syntax().token_at_offset(offset).right_biased()?;
     if pipe_token.kind() != SyntaxKind::PIPE {
         return None;
@@ -401,7 +404,11 @@ fn on_pipe_typed(file: &SourceFile, offset: TextSize) -> Option<TextEdit> {
         return None;
     }
     let after_lpipe = offset + TextSize::of('|');
-    Some(TextEdit::insert(after_lpipe, "|".to_owned()))
+
+    Some(ExtendedTextEdit {
+        edit: TextEdit::insert(after_lpipe, "$0|".to_owned()),
+        is_snippet: true,
+    })
 }
 
 fn on_plus_typed(file: &SourceFile, offset: TextSize) -> Option<TextEdit> {
