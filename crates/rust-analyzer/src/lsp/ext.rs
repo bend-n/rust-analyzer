@@ -383,7 +383,7 @@ pub enum MatchingBrace {}
 
 impl Request for MatchingBrace {
     type Params = MatchingBraceParams;
-    type Result = Vec<Position>;
+    type Result = Vec<Option<(Position, Position)>>;
     const METHOD: &'static str = "experimental/matchingBrace";
 }
 

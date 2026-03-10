@@ -14,7 +14,7 @@ use syntax::{
 // | VS Code | **rust-analyzer: Find matching brace** |
 //
 // ![Matching Brace](https://user-images.githubusercontent.com/48062697/113065573-04298180-91b1-11eb-8dec-d4e2a202f304.gif)
-pub(crate) fn matching_brace(file: &SourceFile, offset: TextSize) -> Option<TextSize> {
+pub(crate) fn matching_brace(file: &SourceFile, offset: TextSize) -> Option<(TextSize, TextSize)> {
     const BRACES: &[SyntaxKind] =
         &[T!['{'], T!['}'], T!['['], T![']'], T!['('], T![')'], T![<], T![>], T![|], T![|]];
     let (brace_token, brace_idx) = file
@@ -35,7 +35,7 @@ pub(crate) fn matching_brace(file: &SourceFile, offset: TextSize) -> Option<Text
         .children_with_tokens()
         .filter_map(|it| it.into_token())
         .find(|node| node.kind() == matching_kind && node != &brace_token)?;
-    Some(matching_node.text_range().start())
+    Some((brace_token.text_range().start(), matching_node.text_range().start()))
 }
 
 #[cfg(test)]
@@ -51,7 +51,7 @@ mod tests {
             let parse = SourceFile::parse(&before, span::Edition::CURRENT);
             let new_pos = match matching_brace(&parse.tree(), pos) {
                 None => pos,
-                Some(pos) => pos,
+                Some(pos) => pos.1,
             };
             let actual = add_cursor(&before, new_pos);
             assert_eq_text!(after, &actual);
