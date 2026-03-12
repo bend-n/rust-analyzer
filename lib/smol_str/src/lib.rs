@@ -1,3 +1,4 @@
+#![feature(deref_pure_trait)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![debugger_visualizer(gdb_script_file = "gdb_smolstr_printer.py")]
@@ -12,6 +13,7 @@ use core::{
     fmt, hash, iter, mem, ops,
     str::FromStr,
 };
+use std::ops::DerefPure;
 
 /// A `SmolStr` is a string type that has the following properties:
 ///
@@ -32,6 +34,8 @@ use core::{
 ///
 /// `WS`: A string of 32 newlines followed by 128 spaces.
 pub struct SmolStr(Repr);
+
+unsafe impl DerefPure for SmolStr {}
 
 impl SmolStr {
     /// The maximum byte length of a string that can be stored inline
