@@ -455,7 +455,8 @@ pub(crate) fn map_rust_diagnostic_to_lsp(
                 tags: tag.clone().map(|tag| vec![tag]),
                 data: Some(serde_json::json!({ "rendered": rendered })),
             },
-            fix: None,
+            // i dont like it.
+            fix: subdiagnostics.iter().flat_map(|x| x.suggested_fix.clone()).next(),
         });
     }
     diagnostics

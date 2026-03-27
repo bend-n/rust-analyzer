@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use syntax::{
     SourceFile, SyntaxKind, T, TextSize,
     ast::{self, AstNode},
