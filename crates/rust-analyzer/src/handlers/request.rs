@@ -1560,7 +1560,7 @@ pub(crate) fn handle_code_action(
     }
 
     // Fixes from `cargo check`.
-    for fix in snap
+    for (fix, diag_range) in snap
         .check_fixes
         .iter()
         .flat_map(|it| it.values())
@@ -1575,7 +1575,9 @@ pub(crate) fn handle_code_action(
             .copied()
             .filter_map(|range| from_proto::text_range(&line_index, range).ok())
             .any(|fix_range| fix_range.intersect(frange.range).is_some());
-        if intersect_fix_range {
+        let intersect_diag_range = from_proto::text_range(&line_index, *diag_range)
+            .is_ok_and(|x| x.intersect(frange.range).is_some());
+        if intersect_fix_range || intersect_diag_range {
             res.push(fix.action.clone());
         }
     }

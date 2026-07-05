@@ -6,6 +6,7 @@ use std::mem;
 use ide::FileId;
 use ide_db::{FxHashMap, base_db::DbPanicContext};
 use itertools::Itertools;
+use lsp_types::Range;
 use rustc_hash::FxHashSet;
 use smallvec::SmallVec;
 use stdx::iter_eq_by;
@@ -17,7 +18,7 @@ use crate::{
 };
 
 pub(crate) type CheckFixes =
-    Arc<Vec<FxHashMap<Option<PackageSpecifier>, FxHashMap<FileId, Vec<Fix>>>>>;
+    Arc<Vec<FxHashMap<Option<PackageSpecifier>, FxHashMap<FileId, Vec<(Fix, Range)>>>>>;
 
 #[derive(Debug, Default, Clone)]
 pub struct DiagnosticsMapConfig {
@@ -191,7 +192,7 @@ impl DiagnosticCollection {
                 .or_default()
                 .entry(file_id)
                 .or_default()
-                .push(*fix);
+                .push((*fix, diagnostic.range));
         }
         diagnostics.push(diagnostic);
         self.changes.insert(file_id);
